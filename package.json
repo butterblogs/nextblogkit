@@ -1,12 +1,12 @@
 {
   "name": "nextblogkit",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A complete blog engine for Next.js — admin panel, block editor, SEO, media storage, and more.",
   "license": "MIT",
   "author": "Santosh Patidar",
   "repository": {
     "type": "git",
-    "url": "https://github.com/patidar-santosh/nextblogkit"
+    "url": "https://github.com/blogforge-ai/nextblogkit"
   },
   "keywords": [
     "nextjs",
