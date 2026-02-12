@@ -5,6 +5,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 interface BlogSearchProps {
   onSearch?: (query: string) => void;
   apiPath?: string;
+  basePath?: string;
   placeholder?: string;
   className?: string;
 }
@@ -18,6 +19,7 @@ interface SearchResult {
 export function BlogSearch({
   onSearch,
   apiPath = '/api/blog',
+  basePath = '/blog',
   placeholder = 'Search posts...',
   className = '',
 }: BlogSearchProps) {
@@ -100,7 +102,7 @@ export function BlogSearch({
           {results.map((result) => (
             <a
               key={result.slug}
-              href={`/blog/${result.slug}`}
+              href={`${basePath}/${result.slug}`}
               className="nbk-search-result"
               onClick={() => setShowResults(false)}
             >

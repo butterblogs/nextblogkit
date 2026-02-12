@@ -1,5 +1,5 @@
 import type { BlogPost } from './types';
-import { getEnvConfig } from './config';
+import { getEnvConfig, getConfig } from './config';
 
 export interface MetaTags {
   title: string;
@@ -30,7 +30,8 @@ export interface MetaTags {
 
 export function generateMetaTags(post: BlogPost): MetaTags {
   const env = getEnvConfig();
-  const postUrl = `${env.NEXTBLOGKIT_SITE_URL}/blog/${post.slug}`;
+  const config = getConfig();
+  const postUrl = `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/${post.slug}`;
   const title = post.seo?.metaTitle || post.title;
   const description = post.seo?.metaDescription || post.excerpt;
   const canonical = post.seo?.canonicalUrl || postUrl;
@@ -100,7 +101,8 @@ export interface ArticleStructuredData {
 
 export function generateStructuredData(post: BlogPost): ArticleStructuredData {
   const env = getEnvConfig();
-  const postUrl = `${env.NEXTBLOGKIT_SITE_URL}/blog/${post.slug}`;
+  const config = getConfig();
+  const postUrl = `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/${post.slug}`;
 
   return {
     '@context': 'https://schema.org',
@@ -176,6 +178,7 @@ export function generateBreadcrumbs(
   categoryName?: string
 ): BreadcrumbStructuredData {
   const env = getEnvConfig();
+  const config = getConfig();
   const items: BreadcrumbStructuredData['itemListElement'] = [
     {
       '@type': 'ListItem',
@@ -187,7 +190,7 @@ export function generateBreadcrumbs(
       '@type': 'ListItem',
       position: 2,
       name: 'Blog',
-      item: `${env.NEXTBLOGKIT_SITE_URL}/blog`,
+      item: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}`,
     },
   ];
 
@@ -196,7 +199,7 @@ export function generateBreadcrumbs(
       '@type': 'ListItem',
       position: 3,
       name: categoryName,
-      item: `${env.NEXTBLOGKIT_SITE_URL}/blog/category/${post.categories[0]}`,
+      item: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/category/${post.categories[0]}`,
     });
     items.push({
       '@type': 'ListItem',

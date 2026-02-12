@@ -1,5 +1,5 @@
 import { getCollection } from './db';
-import { getEnvConfig } from './config';
+import { getEnvConfig, getConfig } from './config';
 
 interface SitemapEntry {
   loc: string;
@@ -10,6 +10,7 @@ interface SitemapEntry {
 
 export async function generateSitemap(): Promise<string> {
   const env = getEnvConfig();
+  const config = getConfig();
   const posts = await getCollection('nbk_posts');
   const categories = await getCollection('nbk_categories');
 
@@ -17,7 +18,7 @@ export async function generateSitemap(): Promise<string> {
 
   // Blog listing page
   entries.push({
-    loc: `${env.NEXTBLOGKIT_SITE_URL}/blog`,
+    loc: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}`,
     changefreq: 'daily',
     priority: '0.9',
   });
@@ -40,7 +41,7 @@ export async function generateSitemap(): Promise<string> {
     else if (daysSincePublish < 30) changefreq = 'weekly';
 
     entries.push({
-      loc: `${env.NEXTBLOGKIT_SITE_URL}/blog/${post.slug}`,
+      loc: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/${post.slug}`,
       lastmod: lastmod ? new Date(lastmod).toISOString().split('T')[0] : undefined,
       changefreq,
       priority: '0.8',
@@ -56,7 +57,7 @@ export async function generateSitemap(): Promise<string> {
 
   for (const cat of allCategories) {
     entries.push({
-      loc: `${env.NEXTBLOGKIT_SITE_URL}/blog/category/${cat.slug}`,
+      loc: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/category/${cat.slug}`,
       changefreq: 'weekly',
       priority: '0.6',
     });
@@ -68,7 +69,7 @@ export async function generateSitemap(): Promise<string> {
   const totalPages = Math.ceil(totalPosts / postsPerPage);
   for (let page = 2; page <= totalPages; page++) {
     entries.push({
-      loc: `${env.NEXTBLOGKIT_SITE_URL}/blog?page=${page}`,
+      loc: `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}?page=${page}`,
       changefreq: 'weekly',
       priority: '0.5',
     });

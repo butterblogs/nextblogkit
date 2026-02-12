@@ -4,7 +4,7 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
-import { getEnvConfig } from './config';
+import { getEnvConfig, isR2Configured } from './config';
 import { randomUUID } from 'crypto';
 
 export interface MediaUploadResult {
@@ -31,13 +31,19 @@ let clientInstance: S3Client | null = null;
 function getS3Client(): S3Client {
   if (clientInstance) return clientInstance;
 
+  if (!isR2Configured()) {
+    throw new Error(
+      'Cloudflare R2 is not configured. Set NEXTBLOGKIT_R2_ACCOUNT_ID, NEXTBLOGKIT_R2_ACCESS_KEY, NEXTBLOGKIT_R2_SECRET_KEY, NEXTBLOGKIT_R2_BUCKET, and NEXTBLOGKIT_R2_PUBLIC_URL environment variables to enable image uploads.'
+    );
+  }
+
   const env = getEnvConfig();
   clientInstance = new S3Client({
     region: 'auto',
-    endpoint: `https://${env.NEXTBLOGKIT_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    endpoint: `https://${env.NEXTBLOGKIT_R2_ACCOUNT_ID!}.r2.cloudflarestorage.com`,
     credentials: {
-      accessKeyId: env.NEXTBLOGKIT_R2_ACCESS_KEY,
-      secretAccessKey: env.NEXTBLOGKIT_R2_SECRET_KEY,
+      accessKeyId: env.NEXTBLOGKIT_R2_ACCESS_KEY!,
+      secretAccessKey: env.NEXTBLOGKIT_R2_SECRET_KEY!,
     },
   });
 

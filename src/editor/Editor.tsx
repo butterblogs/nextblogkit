@@ -55,6 +55,7 @@ export function BlogEditor({
 
   const defaultUpload = useCallback(async (file: File) => {
     if (!uploadImage) {
+      console.warn('[NextBlogKit] No uploadImage handler provided. Using blob URL — image will not persist across page reloads. Configure Cloudflare R2 for persistent image storage.');
       return { url: URL.createObjectURL(file), alt: file.name };
     }
     return uploadImage(file);

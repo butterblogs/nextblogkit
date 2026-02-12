@@ -8,9 +8,10 @@ interface SEOPanelProps {
   title: string;
   slug: string;
   excerpt: string;
+  basePath?: string;
 }
 
-export function SEOPanel({ seo, onChange, title, slug, excerpt }: SEOPanelProps) {
+export function SEOPanel({ seo, onChange, title, slug, excerpt, basePath = '/blog' }: SEOPanelProps) {
   const metaTitle = (seo.metaTitle as string) || '';
   const metaDescription = (seo.metaDescription as string) || '';
   const focusKeyword = (seo.focusKeyword as string) || '';
@@ -20,7 +21,7 @@ export function SEOPanel({ seo, onChange, title, slug, excerpt }: SEOPanelProps)
 
   const displayTitle = metaTitle || title || 'Post Title';
   const displayDesc = metaDescription || excerpt || 'Post description will appear here...';
-  const displayUrl = `/blog/${slug || 'post-url'}`;
+  const displayUrl = `${basePath}/${slug || 'post-url'}`;
 
   const titleLength = displayTitle.length;
   const descLength = displayDesc.length;

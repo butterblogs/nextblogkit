@@ -400,6 +400,11 @@ export default function AdminSettings() {
 `,
     },
     {
+      path: 'api/blog/tokens/route.ts',
+      content: `export { GET, POST, DELETE } from 'nextblogkit/api/tokens';
+`,
+    },
+    {
       path: 'api/blog/sitemap.xml/route.ts',
       content: `export { GET } from 'nextblogkit/api/sitemap';
 `,

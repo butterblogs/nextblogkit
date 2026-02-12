@@ -1,6 +1,6 @@
 {
   "name": "nextblogkit",
-  "version": "0.6.2",
+  "version": "0.7.1",
   "description": "A complete blog engine for Next.js — admin panel, block editor, SEO, media storage, and more.",
   "license": "MIT",
   "author": "Santosh Patidar",

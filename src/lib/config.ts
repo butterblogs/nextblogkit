@@ -2,15 +2,23 @@ import { z } from 'zod';
 import type { NextBlogKitConfig } from './types';
 
 const envSchema = z.object({
+  // Required
   NEXTBLOGKIT_MONGODB_URI: z.string().min(1, 'MongoDB URI is required'),
-  NEXTBLOGKIT_R2_ACCOUNT_ID: z.string().min(1, 'R2 Account ID is required'),
-  NEXTBLOGKIT_R2_ACCESS_KEY: z.string().min(1, 'R2 Access Key is required'),
-  NEXTBLOGKIT_R2_SECRET_KEY: z.string().min(1, 'R2 Secret Key is required'),
-  NEXTBLOGKIT_R2_BUCKET: z.string().min(1, 'R2 Bucket name is required'),
-  NEXTBLOGKIT_R2_PUBLIC_URL: z.string().url('R2 Public URL must be a valid URL'),
   NEXTBLOGKIT_API_KEY: z.string().min(32, 'API key must be at least 32 characters'),
-  NEXTBLOGKIT_SITE_URL: z.string().url('Site URL must be a valid URL'),
-  NEXTBLOGKIT_SITE_NAME: z.string().min(1, 'Site name is required'),
+
+  // Optional — Database name (defaults to the database in your connection URI)
+  NEXTBLOGKIT_MONGODB_DB: z.string().optional(),
+
+  // Optional — Cloudflare R2 (image storage)
+  NEXTBLOGKIT_R2_ACCOUNT_ID: z.string().optional(),
+  NEXTBLOGKIT_R2_ACCESS_KEY: z.string().optional(),
+  NEXTBLOGKIT_R2_SECRET_KEY: z.string().optional(),
+  NEXTBLOGKIT_R2_BUCKET: z.string().optional(),
+  NEXTBLOGKIT_R2_PUBLIC_URL: z.string().optional(),
+
+  // Optional — Site info (defaults provided)
+  NEXTBLOGKIT_SITE_URL: z.string().optional().default(''),
+  NEXTBLOGKIT_SITE_NAME: z.string().optional().default('Blog'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -28,6 +36,17 @@ export function getEnvConfig(): EnvConfig {
 
   cachedEnv = result.data;
   return cachedEnv;
+}
+
+export function isR2Configured(): boolean {
+  const env = getEnvConfig();
+  return !!(
+    env.NEXTBLOGKIT_R2_ACCOUNT_ID &&
+    env.NEXTBLOGKIT_R2_ACCESS_KEY &&
+    env.NEXTBLOGKIT_R2_SECRET_KEY &&
+    env.NEXTBLOGKIT_R2_BUCKET &&
+    env.NEXTBLOGKIT_R2_PUBLIC_URL
+  );
 }
 
 const defaultConfig: NextBlogKitConfig = {

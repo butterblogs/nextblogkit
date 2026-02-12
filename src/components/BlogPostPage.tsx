@@ -161,7 +161,7 @@ export function BlogPostPage({
           <ShareButtons url={postUrl} title={post.title} />
         )}
 
-        {showAuthor && post.author && (
+        {showAuthor && post.author && (post.author.bio || post.author.avatar) && (
           <AuthorCard author={post.author} />
         )}
 

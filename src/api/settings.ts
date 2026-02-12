@@ -4,7 +4,7 @@ import { jsonSuccess, jsonError, requireAuth } from './middleware';
 
 export async function GET(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const settings = await getSettings();
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const body = await request.json();

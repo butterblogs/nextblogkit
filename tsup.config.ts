@@ -25,6 +25,7 @@ export default defineConfig([
       'api/media': 'src/api/media.ts',
       'api/categories': 'src/api/categories.ts',
       'api/settings': 'src/api/settings.ts',
+      'api/tokens': 'src/api/tokens.ts',
       'api/sitemap': 'src/api/sitemap.ts',
       'api/rss': 'src/api/rss.ts',
     },

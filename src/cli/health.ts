@@ -18,10 +18,15 @@ export async function health() {
 
   // Check R2
   try {
-    const { R2StorageProvider } = await import('../lib/storage');
-    const storage = new R2StorageProvider();
-    await storage.list('blog/');
-    console.log('  ✓ Cloudflare R2: Connected');
+    const { isR2Configured } = await import('../lib/config');
+    if (!isR2Configured()) {
+      console.log('  ○ Cloudflare R2: Not configured (optional)');
+    } else {
+      const { R2StorageProvider } = await import('../lib/storage');
+      const storage = new R2StorageProvider();
+      await storage.list('blog/');
+      console.log('  ✓ Cloudflare R2: Connected');
+    }
   } catch (err: any) {
     console.log(`  ✗ Cloudflare R2: ${err.message}`);
     allPassed = false;
@@ -31,7 +36,7 @@ export async function health() {
   try {
     const { getEnvConfig } = await import('../lib/config');
     getEnvConfig();
-    console.log('  ✓ Environment: All variables set');
+    console.log('  ✓ Environment: Required variables set');
   } catch (err: any) {
     console.log(`  ✗ Environment: ${err.message}`);
     allPassed = false;

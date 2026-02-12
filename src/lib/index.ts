@@ -1,4 +1,4 @@
-export { getConfig, getEnvConfig, getBlogConfig, defineConfig } from './config';
+export { getConfig, getEnvConfig, getBlogConfig, defineConfig, isR2Configured } from './config';
 export { getDb, getCollection, ensureIndexes, listPosts, getPostBySlug, getPostById, listCategories, getCategoryBySlug } from './db';
 export { R2StorageProvider } from './storage';
 export { generateSlug, ensureUniqueSlug } from './slug';

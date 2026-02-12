@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useAdminApi } from './hooks';
+import { useAdminApi, getBasePath } from './hooks';
 
 interface Post {
   _id: string;
@@ -212,7 +212,7 @@ export function PostList() {
                       Edit
                     </a>
                     <a
-                      href={`/blog/${post.slug}`}
+                      href={`${getBasePath()}/${post.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="nbk-btn nbk-btn-sm"

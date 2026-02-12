@@ -264,6 +264,23 @@ export interface BlogSettings {
 }
 
 // ============================================================
+// API Tokens
+// ============================================================
+
+export const CreateApiTokenSchema = z.object({
+  name: z.string().min(1, 'Token name is required').max(100),
+});
+
+export interface ApiToken {
+  _id: ObjectId;
+  name: string;
+  tokenHash: string;
+  prefix: string;
+  lastUsedAt?: Date;
+  createdAt: Date;
+}
+
+// ============================================================
 // API Response Types
 // ============================================================
 

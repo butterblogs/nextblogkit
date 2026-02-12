@@ -13,7 +13,28 @@ export function jsonError(code: string, message: string, status = 400): NextResp
   ) as NextResponse<ApiErrorResponse>;
 }
 
-export function requireAuth(request: Request): NextResponse<ApiErrorResponse> | null {
+export async function requireAuth(request: Request): Promise<NextResponse<ApiErrorResponse> | null> {
+  const env = getEnvConfig();
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader) {
+    return jsonError('UNAUTHORIZED', 'Authorization header is required', 401);
+  }
+
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+
+  // Fast path: master key
+  if (token === env.NEXTBLOGKIT_API_KEY) return null;
+
+  // Check DB tokens
+  const { verifyApiToken } = await import('../lib/db');
+  const dbToken = await verifyApiToken(token);
+  if (dbToken) return null;
+
+  return jsonError('FORBIDDEN', 'Invalid API key', 403);
+}
+
+export function requireMasterAuth(request: Request): NextResponse<ApiErrorResponse> | null {
   const env = getEnvConfig();
   const authHeader = request.headers.get('authorization');
 

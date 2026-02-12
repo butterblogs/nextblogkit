@@ -63,7 +63,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const body = await request.json();
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const params = getSearchParams(request);
@@ -111,7 +111,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const params = getSearchParams(request);

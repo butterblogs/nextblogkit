@@ -3,9 +3,18 @@
 import { useCallback } from 'react';
 
 let _apiBase = '/api/blog';
+let _basePath = '/blog';
 
 export function setApiBase(path: string) {
   _apiBase = path;
+}
+
+export function setBasePath(path: string) {
+  _basePath = path;
+}
+
+export function getBasePath(): string {
+  return _basePath;
 }
 
 function getApiKey(): string {

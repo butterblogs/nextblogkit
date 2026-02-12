@@ -1,7 +1,7 @@
 import { createMedia, deleteMedia, listMedia } from '../lib/db';
 import { R2StorageProvider } from '../lib/storage';
 import { processImage } from '../lib/image';
-import { getEnvConfig } from '../lib/config';
+import { getEnvConfig, isR2Configured } from '../lib/config';
 import {
   jsonSuccess,
   jsonError,
@@ -12,7 +12,7 @@ import {
 
 export async function GET(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const params = getSearchParams(request);
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const formData = await request.formData();
@@ -47,6 +47,14 @@ export async function POST(request: Request) {
 
     if (!file) {
       return jsonError('MISSING_FILE', 'File is required');
+    }
+
+    if (!isR2Configured()) {
+      return jsonError(
+        'STORAGE_NOT_CONFIGURED',
+        'Image upload requires Cloudflare R2. Set R2 environment variables to enable uploads.',
+        503
+      );
     }
 
     const env = getEnvConfig();
@@ -107,7 +115,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const authError = requireAuth(request);
+    const authError = await requireAuth(request);
     if (authError) return authError;
 
     const params = getSearchParams(request);

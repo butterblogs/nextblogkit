@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { BlogEditor } from '../editor/Editor';
 import { renderBlocksToHTML } from '../editor/renderer';
 import { SEOPanel } from './SEOPanel';
-import { useAdminApi } from './hooks';
+import { useAdminApi, getBasePath } from './hooks';
 
 interface PostEditorProps {
   postId?: string;
@@ -139,10 +139,20 @@ export function PostEditor({ postId }: PostEditorProps) {
   );
 
   const uploadImage = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await api.post('/media', formData);
-    return { url: res.data.url, alt: res.data.alt || file.name };
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/media', formData);
+      return { url: res.data.url, alt: res.data.alt || file.name };
+    } catch (err: any) {
+      const msg = err.message || 'Upload failed';
+      if (msg.includes('R2') || msg.includes('STORAGE_NOT_CONFIGURED')) {
+        setError('Image upload requires Cloudflare R2 configuration. Set R2 environment variables or use an external image URL instead.');
+      } else {
+        setError(msg);
+      }
+      throw err;
+    }
   };
 
   if (loading) {
@@ -356,6 +366,7 @@ export function PostEditor({ postId }: PostEditorProps) {
                   title={title}
                   slug={slug}
                   excerpt={excerpt}
+                  basePath={getBasePath()}
                 />
               )}
             </div>

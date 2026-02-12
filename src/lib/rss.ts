@@ -1,8 +1,9 @@
 import { getCollection } from './db';
-import { getEnvConfig } from './config';
+import { getEnvConfig, getConfig } from './config';
 
 export async function generateRSSFeed(fullContent = false): Promise<string> {
   const env = getEnvConfig();
+  const config = getConfig();
   const posts = await getCollection('nbk_posts');
 
   const publishedPosts = await posts
@@ -13,7 +14,7 @@ export async function generateRSSFeed(fullContent = false): Promise<string> {
 
   const items = publishedPosts
     .map((post) => {
-      const postUrl = `${env.NEXTBLOGKIT_SITE_URL}/blog/${post.slug}`;
+      const postUrl = `${env.NEXTBLOGKIT_SITE_URL}${config.basePath}/${post.slug}`;
       const content = fullContent ? post.contentHTML : post.excerpt;
       const pubDate = post.publishedAt
         ? new Date(post.publishedAt).toUTCString()
@@ -44,7 +45,7 @@ export async function generateRSSFeed(fullContent = false): Promise<string> {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>${escapeXml(env.NEXTBLOGKIT_SITE_NAME)} Blog</title>
-    <link>${escapeXml(env.NEXTBLOGKIT_SITE_URL)}/blog</link>
+    <link>${escapeXml(env.NEXTBLOGKIT_SITE_URL)}${config.basePath}</link>
     <description>Latest posts from ${escapeXml(env.NEXTBLOGKIT_SITE_NAME)}</description>
     <language>en</language>
     <lastBuildDate>${buildDate}</lastBuildDate>

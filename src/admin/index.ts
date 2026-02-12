@@ -6,4 +6,4 @@ export { MediaLibrary } from './MediaLibrary';
 export { CategoryManager } from './CategoryManager';
 export { SettingsPage } from './SettingsPage';
 export { SEOPanel } from './SEOPanel';
-export { useAdminApi, setApiBase } from './hooks';
+export { useAdminApi, setApiBase, setBasePath, getBasePath } from './hooks';

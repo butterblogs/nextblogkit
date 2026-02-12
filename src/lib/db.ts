@@ -1,10 +1,12 @@
 import { MongoClient, type Db, type Collection, type Document, ObjectId } from 'mongodb';
+import { createHash, randomBytes } from 'crypto';
 import { getEnvConfig } from './config';
 import type {
   BlogPost,
   Category,
   Media,
   BlogSettings,
+  ApiToken,
   CreatePostInput,
   UpdatePostInput,
   CreateCategoryInput,
@@ -24,7 +26,7 @@ export async function getDb(): Promise<Db> {
   const env = getEnvConfig();
   client = new MongoClient(env.NEXTBLOGKIT_MONGODB_URI);
   await client.connect();
-  db = client.db();
+  db = client.db(env.NEXTBLOGKIT_MONGODB_DB || undefined);
   return db;
 }
 
@@ -53,6 +55,10 @@ export async function ensureIndexes(): Promise<void> {
   const media = database.collection('nbk_media');
   await media.createIndex({ createdAt: -1 });
   await media.createIndex({ r2Key: 1 }, { unique: true });
+
+  const tokens = database.collection('nbk_api_tokens');
+  await tokens.createIndex({ tokenHash: 1 }, { unique: true });
+  await tokens.createIndex({ createdAt: -1 });
 }
 
 // ============================================================
@@ -360,4 +366,53 @@ export async function updateSettings(
     { upsert: true }
   );
   return getSettings();
+}
+
+// ============================================================
+// API Tokens
+// ============================================================
+
+function hashToken(plain: string): string {
+  return createHash('sha256').update(plain).digest('hex');
+}
+
+export async function createApiToken(name: string): Promise<{ token: ApiToken; plainToken: string }> {
+  const col = await getCollection('nbk_api_tokens');
+  const plainToken = 'nbk_' + randomBytes(24).toString('hex');
+  const tokenHash = hashToken(plainToken);
+  const prefix = plainToken.slice(0, 8);
+  const now = new Date();
+
+  const doc = {
+    name,
+    tokenHash,
+    prefix,
+    createdAt: now,
+  };
+
+  const result = await col.insertOne(doc);
+  const token = { _id: result.insertedId, ...doc } as unknown as ApiToken;
+  return { token, plainToken };
+}
+
+export async function listApiTokens(): Promise<ApiToken[]> {
+  const col = await getCollection('nbk_api_tokens');
+  return (await col.find({}, { projection: { tokenHash: 0 } }).sort({ createdAt: -1 }).toArray()) as unknown as ApiToken[];
+}
+
+export async function deleteApiToken(id: string): Promise<boolean> {
+  const col = await getCollection('nbk_api_tokens');
+  const result = await col.deleteOne({ _id: new ObjectId(id) });
+  return result.deletedCount > 0;
+}
+
+export async function verifyApiToken(plainToken: string): Promise<ApiToken | null> {
+  const col = await getCollection('nbk_api_tokens');
+  const tokenHash = hashToken(plainToken);
+  const token = await col.findOneAndUpdate(
+    { tokenHash },
+    { $set: { lastUsedAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+  return token as unknown as ApiToken | null;
 }

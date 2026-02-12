@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, type ReactNode } from 'react';
-import { setApiBase } from './hooks';
+import { setApiBase, setBasePath } from './hooks';
 
 interface AdminLayoutProps {
   children: ReactNode;
   apiKey?: string;
   apiPath?: string;
   adminPath?: string;
+  basePath?: string;
 }
 
 function buildNavItems(adminPath: string) {
@@ -21,7 +22,7 @@ function buildNavItems(adminPath: string) {
   ];
 }
 
-export function AdminLayout({ children, apiKey, apiPath, adminPath = '/admin/blog' }: AdminLayoutProps) {
+export function AdminLayout({ children, apiKey, apiPath, adminPath = '/admin/blog', basePath = '/blog' }: AdminLayoutProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputKey, setInputKey] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -31,7 +32,10 @@ export function AdminLayout({ children, apiKey, apiPath, adminPath = '/admin/blo
     if (apiPath) {
       setApiBase(apiPath);
     }
-  }, [apiPath]);
+    if (basePath) {
+      setBasePath(basePath);
+    }
+  }, [apiPath, basePath]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

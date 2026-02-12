@@ -18,8 +18,8 @@ A complete blog engine for Next.js — admin panel, block editor, SEO, media sto
 
 - **Next.js 14+** with App Router
 - **MongoDB** (Atlas or self-hosted)
-- **Cloudflare R2** bucket (for media storage)
 - **Node.js 18+**
+- **Cloudflare R2** bucket (optional — for persistent image storage)
 
 ## Quick Start
 
@@ -61,23 +61,30 @@ cp .env.local.example .env.local
 Fill in your values:
 
 ```env
+# ── REQUIRED ─────────────────────────────────────────────
 # MongoDB Connection
 NEXTBLOGKIT_MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/mydb
 
-# Cloudflare R2 Storage
-NEXTBLOGKIT_R2_ACCOUNT_ID=your-account-id
-NEXTBLOGKIT_R2_ACCESS_KEY=your-access-key
-NEXTBLOGKIT_R2_SECRET_KEY=your-secret-key
-NEXTBLOGKIT_R2_BUCKET=blog-media
-NEXTBLOGKIT_R2_PUBLIC_URL=https://media.yourdomain.com
-
-# Authentication
+# Authentication (must be at least 32 characters)
 NEXTBLOGKIT_API_KEY=your-secure-api-key-must-be-at-least-32-characters-long
 
-# Site Info
-NEXTBLOGKIT_SITE_URL=https://yourdomain.com
-NEXTBLOGKIT_SITE_NAME="Your Site Name"
+# ── OPTIONAL ─────────────────────────────────────────────
+# Database name (optional — defaults to the database in your connection URI)
+# NEXTBLOGKIT_MONGODB_DB=nextblogkit
+
+# Cloudflare R2 Storage (needed for image uploads; without it, images use temporary blob URLs)
+# NEXTBLOGKIT_R2_ACCOUNT_ID=your-account-id
+# NEXTBLOGKIT_R2_ACCESS_KEY=your-access-key
+# NEXTBLOGKIT_R2_SECRET_KEY=your-secret-key
+# NEXTBLOGKIT_R2_BUCKET=blog-media
+# NEXTBLOGKIT_R2_PUBLIC_URL=https://media.yourdomain.com
+
+# Site Info (used in SEO meta tags, RSS, sitemap)
+# NEXTBLOGKIT_SITE_URL=https://yourdomain.com
+# NEXTBLOGKIT_SITE_NAME="Your Site Name"
 ```
+
+> **Only `NEXTBLOGKIT_MONGODB_URI` and `NEXTBLOGKIT_API_KEY` are required to start.** `NEXTBLOGKIT_MONGODB_DB` overrides the database name from the URI. R2 variables are needed for persistent image uploads. Site URL/name are used for SEO — defaults are empty/`"Blog"` if omitted.
 
 ### 4. Run database migrations
 
@@ -525,7 +532,7 @@ import {
 | Component | Description |
 |-----------|-------------|
 | `BlogCard` | Post preview card (vertical or horizontal layout) |
-| `BlogSearch` | Search input with instant results dropdown |
+| `BlogSearch` | Search input with instant results dropdown (accepts `basePath` prop) |
 | `TableOfContents` | Heading list with scroll-to and active heading tracking |
 | `ShareButtons` | Social share buttons (Twitter, Facebook, LinkedIn, copy link) |
 | `ReadingProgressBar` | Top-of-page progress bar tied to scroll position |
@@ -552,6 +559,8 @@ import {
   SEOPanel,
   useAdminApi,
   setApiBase,
+  setBasePath,
+  getBasePath,
 } from 'nextblogkit/admin';
 ```
 
@@ -565,8 +574,9 @@ Wraps all admin pages with sidebar navigation and authentication.
 | `apiKey` | `string` | — | Pre-set API key (bypasses login prompt) |
 | `apiPath` | `string` | `'/api/blog'` | API route prefix for all admin API calls |
 | `adminPath` | `string` | `'/admin/blog'` | Admin route prefix for sidebar nav links |
+| `basePath` | `string` | `'/blog'` | Public blog URL prefix (used for "View" links in post list and SEO preview) |
 
-**Important:** If you change `apiPath` in your config, you **must** pass it to `AdminLayout`:
+**Important:** If you change `apiPath` or `basePath` in your config, you **must** pass them to `AdminLayout`:
 
 ```tsx
 // app/admin/blog/layout.tsx
@@ -575,7 +585,7 @@ import 'nextblogkit/styles/admin.css';
 
 export default function AdminBlogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AdminLayout apiPath="/api/blogs" adminPath="/admin/blog">
+    <AdminLayout apiPath="/api/blogs" adminPath="/admin/blog" basePath="/blogs">
       {children}
     </AdminLayout>
   );
@@ -636,6 +646,7 @@ export { GET, POST, PUT, DELETE } from 'nextblogkit/api/posts';
 export { GET, POST, DELETE } from 'nextblogkit/api/media';
 export { GET, POST, PUT, DELETE } from 'nextblogkit/api/categories';
 export { GET, PUT } from 'nextblogkit/api/settings';
+export { GET, POST, DELETE } from 'nextblogkit/api/tokens';
 export { GET } from 'nextblogkit/api/sitemap';
 export { GET } from 'nextblogkit/api/rss';
 
@@ -727,16 +738,66 @@ All API routes require a Bearer token (`NEXTBLOGKIT_API_KEY`) for write operatio
 
 > **Note:** These endpoints use the default `/api/blog` prefix. If you changed `apiPath` in your config, replace `/api/blog` with your custom path.
 
+### Tokens
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/blog/tokens` | List API tokens (master key only) |
+| POST | `/api/blog/tokens` | Generate new token (master key only) |
+| DELETE | `/api/blog/tokens?id=abc123` | Revoke token (master key only) |
+
 ### Authentication
 
-Include the API key as a Bearer token:
+Include the API key or a generated token as a Bearer token:
 
 ```bash
 curl -X POST http://localhost:3000/api/blog/posts \
   -H "Authorization: Bearer your-api-key-here" \
   -H "Content-Type: application/json" \
-  -d '{"title": "My Post", "content": {...}}'
+  -d '{"title": "My Post", "content": [...], "status": "published"}'
 ```
+
+**API Tokens** — You can generate scoped API tokens from the admin Settings page (API Access section). Generated tokens work the same as the master key for read/write operations, but cannot manage other tokens. This is useful for CI pipelines, n8n workflows, and other external integrations.
+
+### Create Post — Sample JSON
+
+```json
+{
+  "title": "My Blog Post",
+  "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Hello world!" }] }],
+  "contentHTML": "<p>Hello world!</p>",
+  "excerpt": "A short summary of the post",
+  "status": "published",
+  "categories": ["tech"],
+  "tags": ["nextjs", "blog"],
+  "author": {
+    "name": "John Doe",
+    "bio": "Software engineer",
+    "avatar": "https://example.com/avatar.jpg"
+  },
+  "seo": {
+    "metaTitle": "My Blog Post | MySite",
+    "metaDescription": "A short summary for search engines",
+    "focusKeyword": "blog post"
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Post title |
+| `content` | BlockContent[] | No | TipTap JSON content blocks |
+| `contentHTML` | string | No | HTML version of the content |
+| `excerpt` | string | No | Short summary (auto-generated if omitted) |
+| `slug` | string | No | URL slug (auto-generated from title if omitted) |
+| `status` | `"draft"` \| `"published"` \| `"scheduled"` | No | Defaults to `"draft"` |
+| `categories` | string[] | No | Category slugs |
+| `tags` | string[] | No | Tag strings |
+| `author` | `{ name, bio?, avatar?, url? }` | No | Post author info |
+| `seo` | `{ metaTitle?, metaDescription?, focusKeyword?, ... }` | No | SEO metadata |
+| `coverImage` | `{ _id, url, alt?, caption? }` | No | Cover image reference |
+| `publishedAt` | ISO date string | No | Publish date (auto-set when status is `"published"`) |
+| `scheduledAt` | ISO date string | No | Schedule date for future publishing |
 
 ---
 
@@ -852,6 +913,7 @@ app/
     ├── media/route.ts              # Media upload/list/delete
     ├── categories/route.ts         # Categories CRUD
     ├── settings/route.ts           # Settings read/update
+    ├── tokens/route.ts             # API token management
     ├── sitemap.xml/route.ts        # Dynamic sitemap
     └── rss.xml/route.ts            # RSS feed
 ```
@@ -862,7 +924,7 @@ Because these are thin wrappers, you can customize any page by editing the gener
 
 ## Local Development (without R2)
 
-If you want to try NextBlogKit locally without Cloudflare R2, images will fall back to `URL.createObjectURL` (browser-only, non-persistent). For a fully working local setup:
+NextBlogKit works with just **MongoDB + API key**. Cloudflare R2 is optional — without it, the editor uses temporary blob URLs for images (they won't persist across reloads), and the upload API returns a clear 503 error. This lets you develop locally and add R2 when you're ready.
 
 1. **MongoDB** — Use a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster, or run locally:
    ```bash
@@ -871,12 +933,12 @@ If you want to try NextBlogKit locally without Cloudflare R2, images will fall b
    # Then use: NEXTBLOGKIT_MONGODB_URI=mongodb://localhost:27017/nextblogkit
    ```
 
-2. **R2** — Create a free Cloudflare R2 bucket at [dash.cloudflare.com](https://dash.cloudflare.com). The free tier includes 10 GB storage and 10 million reads/month.
-
-3. **API Key** — Generate a secure key:
+2. **API Key** — Generate a secure key:
    ```bash
    openssl rand -hex 32
    ```
+
+3. **R2 (optional)** — Create a free Cloudflare R2 bucket at [dash.cloudflare.com](https://dash.cloudflare.com) for persistent image storage. The free tier includes 10 GB storage and 10 million reads/month.
 
 ---
 
