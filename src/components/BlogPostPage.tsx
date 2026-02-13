@@ -72,8 +72,77 @@ export function BlogPostPage({
   const hasTOC = showTOC && tocPosition !== 'none' && headings.length > 2;
   const hasSidebarTOC = hasTOC && tocPosition === 'sidebar';
 
+  // Build JSON-LD structured data
+  const blogPostingLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || '',
+    image: post.coverImage?.url || post.seo?.ogImage || undefined,
+    datePublished: post.publishedAt || undefined,
+    dateModified: post.updatedAt || post.publishedAt || undefined,
+    author: {
+      '@type': 'Person',
+      name: post.author?.name || 'Unknown',
+      ...(post.author?.url ? { url: post.author.url } : {}),
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+    ...(post.wordCount ? { wordCount: post.wordCount } : {}),
+    ...(post.categories?.[0] ? { articleSection: post.categories[0] } : {}),
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: '/' },
+      { '@type': 'ListItem', position: 2, name: blogLabel, item: basePath },
+      ...(post.categories?.[0]
+        ? [
+            { '@type': 'ListItem', position: 3, name: post.categories[0], item: `${basePath}/category/${post.categories[0]}` },
+            { '@type': 'ListItem', position: 4, name: post.title },
+          ]
+        : [{ '@type': 'ListItem', position: 3, name: post.title }]),
+    ],
+  };
+
+  // Extract FAQ items from content HTML for FAQPage schema
+  const faqItems: { question: string; answer: string }[] = [];
+  const faqRegex = /<div[^>]*class="nbk-faq-question"[^>]*>(.*?)<\/div>\s*<div[^>]*class="nbk-faq-answer"[^>]*>(.*?)<\/div>/gis;
+  let faqMatch;
+  while ((faqMatch = faqRegex.exec(post.contentHTML || '')) !== null) {
+    faqItems.push({
+      question: faqMatch[1].replace(/<[^>]+>/g, '').trim(),
+      answer: faqMatch[2].replace(/<[^>]+>/g, '').trim(),
+    });
+  }
+
+  const faqLd = faqItems.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  } : null;
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
       {slots?.header}
       <article className={`nbk-post ${hasSidebarTOC ? 'nbk-post-with-toc' : ''} ${className}`}>
         {showReadingProgress && <ReadingProgressBar />}
