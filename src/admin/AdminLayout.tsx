@@ -37,23 +37,75 @@ export function AdminLayout({ children, apiKey, apiPath, adminPath = '/admin/blo
     }
   }, [apiPath, basePath]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentPath(window.location.pathname);
-      const stored = sessionStorage.getItem('nbk_api_key');
-      if (stored || apiKey) {
-        setIsAuthenticated(true);
-      }
-    }
-  }, [apiKey]);
+  const [initializing, setInitializing] = useState(true);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setCurrentPath(window.location.pathname);
+
+    const stored = sessionStorage.getItem('nbk_api_key');
+    const key = stored || apiKey;
+    if (!key) {
+      setInitializing(false);
+      return;
+    }
+
+    const base = apiPath || '/api/blog';
+    fetch(`${base}/settings`, {
+      headers: { Authorization: `Bearer ${key}` },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          sessionStorage.removeItem('nbk_api_key');
+        }
+      })
+      .catch(() => {
+        // Network error — still allow if key exists (offline tolerance)
+        if (key) setIsAuthenticated(true);
+      })
+      .finally(() => setInitializing(false));
+  }, [apiKey, apiPath]);
+
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputKey.trim()) {
-      sessionStorage.setItem('nbk_api_key', inputKey);
-      setIsAuthenticated(true);
+    if (!inputKey.trim()) return;
+
+    setLoginError('');
+    setLoginLoading(true);
+
+    try {
+      const base = apiPath || '/api/blog';
+      const res = await fetch(`${base}/settings`, {
+        headers: { Authorization: `Bearer ${inputKey}` },
+      });
+
+      if (res.ok) {
+        sessionStorage.setItem('nbk_api_key', inputKey);
+        setIsAuthenticated(true);
+      } else {
+        setLoginError('Invalid API key');
+      }
+    } catch {
+      setLoginError('Unable to connect to server');
+    } finally {
+      setLoginLoading(false);
     }
   };
+
+  if (initializing) {
+    return (
+      <div className="nbk-admin-login">
+        <div className="nbk-login-card">
+          <p className="nbk-login-subtitle">Verifying...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -69,9 +121,11 @@ export function AdminLayout({ children, apiKey, apiPath, adminPath = '/admin/blo
               placeholder="Enter API key"
               className="nbk-login-input"
               autoFocus
+              disabled={loginLoading}
             />
-            <button type="submit" className="nbk-login-btn">
-              Sign In
+            {loginError && <p className="nbk-login-error">{loginError}</p>}
+            <button type="submit" className="nbk-login-btn" disabled={loginLoading}>
+              {loginLoading ? 'Verifying...' : 'Sign In'}
             </button>
           </form>
         </div>

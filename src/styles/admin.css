@@ -67,6 +67,16 @@
 .nbk-login-btn:hover {
   background: var(--nbk-primary-hover);
 }
+.nbk-login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.nbk-login-error {
+  color: var(--nbk-danger);
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0;
+  text-align: center;
+}
 
 /* Admin Layout */
 .nbk-admin {
