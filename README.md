@@ -44,9 +44,9 @@ npx nextblogkit init
 ```
 
 This creates:
-- `app/blog/` — Blog pages (list, post, category)
-- `app/admin/blog/` — Admin panel pages (dashboard, posts, media, categories, settings)
-- `app/api/blog/` — API routes (posts, media, categories, settings, sitemap, RSS)
+- `app/blogs/` — Blog pages (list, post, category)
+- `app/admin/blogs/` — Admin panel pages (dashboard, posts, media, categories, settings)
+- `app/api/blogs/` — API routes (posts, media, categories, settings, sitemap, RSS)
 - `nextblogkit.config.ts` — Configuration file
 - `.env.local.example` — Environment variable template
 
@@ -100,8 +100,8 @@ This creates the required MongoDB indexes for posts, categories, and media.
 pnpm dev
 ```
 
-- Blog: [http://localhost:3000/blog](http://localhost:3000/blog)
-- Admin: [http://localhost:3000/admin/blog](http://localhost:3000/admin/blog)
+- Blog: [http://localhost:3000/blogs](http://localhost:3000/blogs)
+- Admin: [http://localhost:3000/admin/blogs](http://localhost:3000/admin/blogs)
 
 The admin panel will prompt you for the API key on first visit (the value of `NEXTBLOGKIT_API_KEY`).
 
@@ -116,9 +116,9 @@ import { defineConfig } from 'nextblogkit';
 
 export default defineConfig({
   // URL paths — customize to match your site structure
-  basePath: '/blog',        // Public blog URL prefix
-  adminPath: '/admin/blog', // Admin panel URL prefix
-  apiPath: '/api/blog',     // API routes URL prefix
+  basePath: '/blogs',        // Public blog URL prefix
+  adminPath: '/admin/blogs', // Admin panel URL prefix
+  apiPath: '/api/blogs',     // API routes URL prefix
 
   // Pagination
   postsPerPage: 10,
@@ -163,7 +163,7 @@ export default defineConfig({
 
 ### Custom URL Paths
 
-You can change the blog URL from `/blog` to anything — `/articles`, `/posts`, `/blogs`, etc. Make sure the folder structure in your `app/` directory matches and pass the paths through to components:
+You can change the blog URL from `/blogs` to anything — `/articles`, `/posts`, `/blog`, etc. Make sure the folder structure in your `app/` directory matches and pass the paths through to components:
 
 ```typescript
 export default defineConfig({
@@ -182,7 +182,7 @@ import 'nextblogkit/styles/admin.css';
 
 export default function AdminBlogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AdminLayout apiPath="/api/articles" adminPath="/admin/articles">
+    <AdminLayout apiPath="/api/articles" adminPath="/admin/articles" basePath="/articles">
       {children}
     </AdminLayout>
   );
@@ -228,7 +228,7 @@ NextBlogKit uses CSS variables for theming. Every color, font, radius, and shado
 Add a `<style>` block in your blog layout or override in your global CSS:
 
 ```tsx
-// app/blog/layout.tsx
+// app/blogs/layout.tsx
 import 'nextblogkit/styles/blog.css';
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
@@ -340,7 +340,7 @@ import { BlogPostPage } from 'nextblogkit/components';
 | `showRelatedPosts` | `boolean` | `true` | Show related posts section |
 | `showShareButtons` | `boolean` | `true` | Show share buttons |
 | `showReadingProgress` | `boolean` | `true` | Show reading progress bar at top |
-| `basePath` | `string` | `'/blog'` | Blog URL prefix (for links) |
+| `basePath` | `string` | `'/blogs'` | Blog URL prefix (for links) |
 | `className` | `string` | `''` | Additional CSS class |
 | `slots` | `BlogPostSlots` | — | Custom content injection (see below) |
 
@@ -384,7 +384,7 @@ interface BlogPostSlots {
 **Full page example:**
 
 ```tsx
-// app/blog/[slug]/page.tsx
+// app/blogs/[slug]/page.tsx
 import { BlogPostPage } from 'nextblogkit/components';
 import { getPostBySlug, listPosts, generateMetaTags } from 'nextblogkit/lib';
 import type { Metadata } from 'next';
@@ -433,7 +433,7 @@ export default async function BlogPost({ params }: Props) {
       relatedPosts={JSON.parse(JSON.stringify(relatedPosts))}
       showTOC
       tocPosition="sidebar"
-      basePath="/blog"
+      basePath="/blogs"
     />
   );
 }
@@ -462,8 +462,8 @@ import { BlogListPage } from 'nextblogkit/components';
 | `showCategories` | `boolean` | `true` | Show category sidebar |
 | `showSearch` | `boolean` | `true` | Show search bar |
 | `layout` | `'grid' \| 'list' \| 'magazine'` | `'grid'` | Post card layout style |
-| `basePath` | `string` | `'/blog'` | Blog URL prefix |
-| `apiPath` | `string` | `'/api/blog'` | API URL prefix (for search) |
+| `basePath` | `string` | `'/blogs'` | Blog URL prefix |
+| `apiPath` | `string` | `'/api/blogs'` | API URL prefix (for search) |
 | `className` | `string` | `''` | Additional CSS class |
 | `slots` | `BlogListSlots` | — | Custom content injection (see below) |
 
@@ -572,20 +572,20 @@ Wraps all admin pages with sidebar navigation and authentication.
 |------|------|---------|-------------|
 | `children` | `ReactNode` | *required* | Page content |
 | `apiKey` | `string` | — | Pre-set API key (bypasses login prompt) |
-| `apiPath` | `string` | `'/api/blog'` | API route prefix for all admin API calls |
-| `adminPath` | `string` | `'/admin/blog'` | Admin route prefix for sidebar nav links |
-| `basePath` | `string` | `'/blog'` | Public blog URL prefix (used for "View" links in post list and SEO preview) |
+| `apiPath` | `string` | `'/api/blogs'` | API route prefix for all admin API calls |
+| `adminPath` | `string` | `'/admin/blogs'` | Admin route prefix for sidebar nav links |
+| `basePath` | `string` | `'/blogs'` | Public blog URL prefix (used for "View" links in post list and SEO preview) |
 
 **Important:** If you change `apiPath` or `basePath` in your config, you **must** pass them to `AdminLayout`:
 
 ```tsx
-// app/admin/blog/layout.tsx
+// app/admin/blogs/layout.tsx
 import { AdminLayout } from 'nextblogkit/admin';
 import 'nextblogkit/styles/admin.css';
 
 export default function AdminBlogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AdminLayout apiPath="/api/blogs" adminPath="/admin/blog" basePath="/blogs">
+    <AdminLayout apiPath="/api/blogs" adminPath="/admin/blogs" basePath="/blogs">
       {children}
     </AdminLayout>
   );
@@ -599,10 +599,10 @@ export default function AdminBlogLayout({ children }: { children: React.ReactNod
 Import the CSS files you need in your layout files:
 
 ```tsx
-// Blog pages — import in app/blog/layout.tsx
+// Blog pages — import in app/blogs/layout.tsx
 import 'nextblogkit/styles/blog.css';
 
-// Admin pages — import in app/admin/blog/layout.tsx
+// Admin pages — import in app/admin/blogs/layout.tsx
 import 'nextblogkit/styles/admin.css';
 ```
 
@@ -705,53 +705,53 @@ All API routes require a Bearer token (`NEXTBLOGKIT_API_KEY`) for write operatio
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/blog/posts` | List posts (supports `?status=`, `?category=`, `?search=`, `?page=`, `?limit=`) |
-| GET | `/api/blog/posts?slug=my-post` | Get single post by slug |
-| GET | `/api/blog/posts?id=abc123` | Get single post by ID |
-| POST | `/api/blog/posts` | Create post |
-| PUT | `/api/blog/posts` | Update post (requires `?id=`) |
-| DELETE | `/api/blog/posts` | Delete/archive post (requires `?id=`) |
+| GET | `/api/blogs/posts` | List posts (supports `?status=`, `?category=`, `?search=`, `?page=`, `?limit=`) |
+| GET | `/api/blogs/posts?slug=my-post` | Get single post by slug |
+| GET | `/api/blogs/posts?id=abc123` | Get single post by ID |
+| POST | `/api/blogs/posts` | Create post |
+| PUT | `/api/blogs/posts` | Update post (requires `?id=`) |
+| DELETE | `/api/blogs/posts` | Delete/archive post (requires `?id=`) |
 
 ### Media
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/blog/media` | List media files |
-| POST | `/api/blog/media` | Upload file (multipart/form-data) |
-| DELETE | `/api/blog/media?id=abc123` | Delete media file |
+| GET | `/api/blogs/media` | List media files |
+| POST | `/api/blogs/media` | Upload file (multipart/form-data) |
+| DELETE | `/api/blogs/media?id=abc123` | Delete media file |
 
 ### Categories
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/blog/categories` | List categories |
-| POST | `/api/blog/categories` | Create category |
-| PUT | `/api/blog/categories?id=abc123` | Update category |
-| DELETE | `/api/blog/categories?id=abc123` | Delete category |
+| GET | `/api/blogs/categories` | List categories |
+| POST | `/api/blogs/categories` | Create category |
+| PUT | `/api/blogs/categories?id=abc123` | Update category |
+| DELETE | `/api/blogs/categories?id=abc123` | Delete category |
 
 ### Settings
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/blog/settings` | Get settings |
-| PUT | `/api/blog/settings` | Update settings |
+| GET | `/api/blogs/settings` | Get settings |
+| PUT | `/api/blogs/settings` | Update settings |
 
-> **Note:** These endpoints use the default `/api/blog` prefix. If you changed `apiPath` in your config, replace `/api/blog` with your custom path.
+> **Note:** These endpoints use the default `/api/blogs` prefix. If you changed `apiPath` in your config, replace `/api/blogs` with your custom path.
 
 ### Tokens
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/blog/tokens` | List API tokens (master key only) |
-| POST | `/api/blog/tokens` | Generate new token (master key only) |
-| DELETE | `/api/blog/tokens?id=abc123` | Revoke token (master key only) |
+| GET | `/api/blogs/tokens` | List API tokens (master key only) |
+| POST | `/api/blogs/tokens` | Generate new token (master key only) |
+| DELETE | `/api/blogs/tokens?id=abc123` | Revoke token (master key only) |
 
 ### Authentication
 
 Include the API key or a generated token as a Bearer token:
 
 ```bash
-curl -X POST http://localhost:3000/api/blog/posts \
+curl -X POST http://localhost:3000/api/blogs/posts \
   -H "Authorization: Bearer your-api-key-here" \
   -H "Content-Type: application/json" \
   -d '{"title": "My Post", "content": [...], "status": "published"}'
@@ -836,7 +836,7 @@ function MyEditor() {
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch('/api/blog/media', {
+    const res = await fetch('/api/blogs/media', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}` },
       body: formData,
@@ -866,8 +866,8 @@ NextBlogKit automatically generates:
 - **Open Graph** — og:title, og:description, og:image, og:type
 - **Twitter Cards** — twitter:card, twitter:title, twitter:description
 - **JSON-LD** — BlogPosting and FAQPage structured data
-- **Sitemap** — Dynamic XML sitemap at `/api/blog/sitemap.xml`
-- **RSS** — RSS 2.0 feed at `/api/blog/rss.xml`
+- **Sitemap** — Dynamic XML sitemap at `/api/blogs/sitemap.xml`
+- **RSS** — RSS 2.0 feed at `/api/blogs/rss.xml`
 
 The built-in SEO scorer checks 17 factors including keyword density, title length, heading hierarchy, image alt text, and readability.
 
@@ -896,11 +896,11 @@ Running `npx nextblogkit init` creates thin wrapper files inside your `app/` dir
 
 ```
 app/
-├── blog/
+├── blogs/
 │   ├── page.tsx                    # Blog list page
 │   ├── [slug]/page.tsx             # Individual post page (with SEO metadata)
 │   └── category/[slug]/page.tsx    # Category filter page
-├── admin/blog/
+├── admin/blogs/
 │   ├── layout.tsx                  # Admin layout with sidebar
 │   ├── page.tsx                    # Dashboard
 │   ├── posts/page.tsx              # Post list
@@ -909,7 +909,7 @@ app/
 │   ├── media/page.tsx              # Media library
 │   ├── categories/page.tsx         # Category manager
 │   └── settings/page.tsx           # Settings
-└── api/blog/
+└── api/blogs/
     ├── posts/route.ts              # Posts CRUD
     ├── media/route.ts              # Media upload/list/delete
     ├── categories/route.ts         # Categories CRUD
