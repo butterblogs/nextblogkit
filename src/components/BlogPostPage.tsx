@@ -65,6 +65,10 @@ export function BlogPostPage({
     : '';
 
   const postUrl = `${basePath}/${post.slug}`;
+  const blogLabel = (() => {
+    const segment = basePath.split('/').filter(Boolean).pop() || 'Blog';
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
+  })();
   const hasTOC = showTOC && tocPosition !== 'none' && headings.length > 2;
   const hasSidebarTOC = hasTOC && tocPosition === 'sidebar';
 
@@ -77,7 +81,7 @@ export function BlogPostPage({
         <BreadcrumbNav
           items={[
             { label: 'Home', href: '/' },
-            { label: 'Blog', href: basePath },
+            { label: blogLabel, href: basePath },
             ...(post.categories?.[0]
               ? [{ label: post.categories[0], href: `${basePath}/category/${post.categories[0]}` }]
               : []),

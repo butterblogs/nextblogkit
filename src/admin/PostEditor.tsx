@@ -32,6 +32,13 @@ export function PostEditor({ postId }: PostEditorProps) {
   const [loading, setLoading] = useState(!!postId);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Media picker state
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [mediaItems, setMediaItems] = useState<{ _id: string; url: string; alt?: string; originalName: string }[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'cover' | 'editor'>('cover');
+  const [mediaPickerResolve, setMediaPickerResolve] = useState<((result: { url: string; alt?: string } | null) => void) | null>(null);
+
   useEffect(() => {
     api.get('/categories').then((res) => {
       setAllCategories(res.data || []);
@@ -155,6 +162,46 @@ export function PostEditor({ postId }: PostEditorProps) {
     }
   };
 
+  const openMediaPicker = async (target: 'cover' | 'editor') => {
+    setMediaPickerTarget(target);
+    setShowMediaPicker(true);
+    setMediaLoading(true);
+    try {
+      const res = await api.get('/media?limit=50');
+      setMediaItems(res.data || []);
+    } catch {
+      setMediaItems([]);
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const selectMedia = (item: { url: string; alt?: string }) => {
+    if (mediaPickerTarget === 'cover') {
+      setCoverImageUrl(item.url);
+    }
+    if (mediaPickerTarget === 'editor' && mediaPickerResolve) {
+      mediaPickerResolve(item);
+      setMediaPickerResolve(null);
+    }
+    setShowMediaPicker(false);
+  };
+
+  const closeMediaPicker = () => {
+    setShowMediaPicker(false);
+    if (mediaPickerResolve) {
+      mediaPickerResolve(null);
+      setMediaPickerResolve(null);
+    }
+  };
+
+  const handleBrowseMedia = (): Promise<{ url: string; alt?: string } | null> => {
+    return new Promise((resolve) => {
+      setMediaPickerResolve(() => resolve);
+      openMediaPicker('editor');
+    });
+  };
+
   if (loading) {
     return (
       <div className="nbk-post-editor">
@@ -216,6 +263,7 @@ export function PostEditor({ postId }: PostEditorProps) {
             onChange={setContent}
             onSave={postId ? handleAutosave : undefined}
             uploadImage={uploadImage}
+            onBrowseMedia={handleBrowseMedia}
           />
         </div>
 
@@ -304,27 +352,35 @@ export function PostEditor({ postId }: PostEditorProps) {
                 className="nbk-input"
                 placeholder="Image URL"
               />
-              <button
-                onClick={async () => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = async () => {
-                    const file = input.files?.[0];
-                    if (!file) return;
-                    try {
-                      const result = await uploadImage(file);
-                      setCoverImageUrl(result.url);
-                    } catch (err) {
-                      console.error('Cover upload failed:', err);
-                    }
-                  };
-                  input.click();
-                }}
-                className="nbk-btn nbk-btn-sm nbk-btn-secondary"
-              >
-                Upload Cover Image
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={async () => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = async () => {
+                      const file = input.files?.[0];
+                      if (!file) return;
+                      try {
+                        const result = await uploadImage(file);
+                        setCoverImageUrl(result.url);
+                      } catch (err) {
+                        console.error('Cover upload failed:', err);
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="nbk-btn nbk-btn-sm nbk-btn-secondary"
+                >
+                  Upload New
+                </button>
+                <button
+                  onClick={() => openMediaPicker('cover')}
+                  className="nbk-btn nbk-btn-sm nbk-btn-secondary"
+                >
+                  Choose from Library
+                </button>
+              </div>
             </div>
 
             {/* Author */}
@@ -373,6 +429,112 @@ export function PostEditor({ postId }: PostEditorProps) {
           </div>
         )}
       </div>
+
+      {/* Media Picker Modal */}
+      {showMediaPicker && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={closeMediaPicker}
+        >
+          <div
+            style={{
+              background: 'var(--nbk-bg, #fff)',
+              borderRadius: 'var(--nbk-radius, 0.5rem)',
+              width: '90%',
+              maxWidth: '800px',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '1rem 1.25rem',
+              borderBottom: '1px solid var(--nbk-border, #e5e7eb)',
+            }}>
+              <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                Choose from Media Library
+              </h2>
+              <button
+                onClick={closeMediaPicker}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--nbk-text-muted)',
+                  lineHeight: 1,
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div style={{ padding: '1rem 1.25rem', overflowY: 'auto', flex: 1 }}>
+              {mediaLoading ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--nbk-text-muted)' }}>
+                  Loading media...
+                </div>
+              ) : mediaItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--nbk-text-muted)' }}>
+                  No media files found. Upload images via the Media Library first.
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '0.75rem',
+                }}>
+                  {mediaItems.filter((m) => m.url).map((item) => (
+                    <button
+                      key={item._id}
+                      onClick={() => selectMedia({ url: item.url, alt: item.alt || item.originalName })}
+                      style={{
+                        background: 'none',
+                        border: '2px solid var(--nbk-border, #e5e7eb)',
+                        borderRadius: 'var(--nbk-radius, 0.5rem)',
+                        padding: '0.25rem',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        aspectRatio: '1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--nbk-primary, #2563eb)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--nbk-border, #e5e7eb)')}
+                      title={item.originalName}
+                    >
+                      <img
+                        src={item.url}
+                        alt={item.alt || item.originalName}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: 'calc(var(--nbk-radius, 0.5rem) - 4px)',
+                        }}
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

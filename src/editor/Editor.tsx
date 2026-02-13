@@ -20,13 +20,14 @@ import { Callout } from './extensions/callout';
 import { FAQ, FAQItem, FAQQuestion, FAQAnswer } from './extensions/faq';
 import { TableOfContents } from './extensions/toc';
 import { CodeBlockEnhanced } from './extensions/code-block';
-import { SlashCommand, type SlashCommandState, type SlashCommandItem } from './extensions/slash-command';
+import { SlashCommand, defaultSlashCommands, type SlashCommandState, type SlashCommandItem } from './extensions/slash-command';
 
 export interface BlogEditorProps {
   content?: Record<string, unknown>;
   onChange?: (content: Record<string, unknown>) => void;
   onSave?: (content: Record<string, unknown>) => void;
   uploadImage?: (file: File) => Promise<{ url: string; alt?: string }>;
+  onBrowseMedia?: () => Promise<{ url: string; alt?: string } | null>;
   placeholder?: string;
   autosaveInterval?: number;
   className?: string;
@@ -37,6 +38,7 @@ export function BlogEditor({
   onChange,
   onSave,
   uploadImage,
+  onBrowseMedia,
   placeholder = 'Start writing your post... Type "/" for commands',
   autosaveInterval = 30000,
   className = '',
@@ -60,6 +62,26 @@ export function BlogEditor({
     }
     return uploadImage(file);
   }, [uploadImage]);
+
+  const slashCommands = React.useMemo(() => {
+    if (!onBrowseMedia) return defaultSlashCommands;
+    const imageIndex = defaultSlashCommands.findIndex((c) => c.title === 'Image');
+    const mediaItem: SlashCommandItem = {
+      title: 'Media Library',
+      description: 'Choose from uploaded images',
+      icon: '📁',
+      command: (editor) => {
+        onBrowseMedia().then((result) => {
+          if (result) {
+            editor.chain().focus().setImage({ src: result.url, alt: result.alt || '' }).run();
+          }
+        });
+      },
+    };
+    const cmds = [...defaultSlashCommands];
+    cmds.splice(imageIndex + 1, 0, mediaItem);
+    return cmds;
+  }, [onBrowseMedia]);
 
   const editor = useEditor({
     extensions: [
@@ -87,6 +109,7 @@ export function BlogEditor({
       FAQAnswer,
       TableOfContents,
       SlashCommand.configure({
+        commands: slashCommands,
         onStateChange: setSlashState,
       }),
     ],
@@ -278,6 +301,20 @@ export function BlogEditor({
             >
               &#128247;
             </button>
+            {onBrowseMedia && (
+              <button
+                onClick={async () => {
+                  const result = await onBrowseMedia();
+                  if (result && editor) {
+                    editor.chain().focus().setImage({ src: result.url, alt: result.alt || '' }).run();
+                  }
+                }}
+                className="nbk-toolbar-btn"
+                title="Choose from Media Library"
+              >
+                &#128444;
+              </button>
+            )}
           </div>
         </div>
       )}

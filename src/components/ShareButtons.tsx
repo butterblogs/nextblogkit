@@ -11,7 +11,11 @@ interface ShareButtonsProps {
 export function ShareButtons({ url, title, className = '' }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
 
-  const encodedUrl = encodeURIComponent(url);
+  const fullUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${url}`
+    : url;
+
+  const encodedUrl = encodeURIComponent(fullUrl);
   const encodedTitle = encodeURIComponent(title);
 
   const share = (platform: string) => {
@@ -29,13 +33,13 @@ export function ShareButtons({ url, title, className = '' }: ShareButtonsProps) 
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback
       const input = document.createElement('input');
-      input.value = url;
+      input.value = fullUrl;
       document.body.appendChild(input);
       input.select();
       document.execCommand('copy');

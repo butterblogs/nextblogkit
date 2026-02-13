@@ -815,6 +815,7 @@ Type `/` in the editor to open the command menu:
 | Blockquote | Quote block |
 | Code Block | Syntax-highlighted code |
 | Image | Upload an image |
+| Media Library | Choose from uploaded images (when `onBrowseMedia` is provided) |
 | Table | Insert a 3x3 table |
 | Divider | Horizontal rule |
 | Callout | Info/warning/tip/danger box |
