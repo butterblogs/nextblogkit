@@ -2,6 +2,8 @@
 
 A complete blog engine for Next.js — admin panel, block editor, SEO, media storage, and more. Drop it into any Next.js 14+ app and get a fully featured blog in minutes.
 
+> **Sponsored by [ButterBlogs](https://butterblogs.com)** — AI-powered content creation, smooth as butter. Research, write, optimize, and publish SEO-ready blog posts 10x faster. NextBlogKit + ButterBlogs = write with AI, publish with one click.
+
 ## Features
 
 - **Block Editor** — TipTap-based with slash commands, image upload, code blocks (Shiki), callouts, FAQ schema, tables, task lists
@@ -1008,6 +1010,22 @@ pnpm dev
 | CLI | Commander.js |
 | Build | tsup (ESM + CJS) |
 | Styling | CSS Variables + Tailwind-compatible |
+
+## ButterBlogs Integration
+
+NextBlogKit is built and sponsored by [ButterBlogs](https://butterblogs.com) — an AI content platform that automates blog creation from research to publication.
+
+**How they work together:**
+
+1. **Write** — Use ButterBlogs to research topics, generate SEO-optimized articles with your brand voice, and export as structured content
+2. **Publish** — Push directly to your NextBlogKit-powered blog via the API, or paste into the admin editor
+3. **Rank** — NextBlogKit handles the technical SEO (JSON-LD schema, sitemap, RSS, meta tags) while ButterBlogs handles the content SEO (keyword targeting, EEAT signals, internal linking)
+
+This gives you a complete content pipeline: AI-assisted writing with a self-hosted, fully customizable blog frontend — no third-party CMS lock-in.
+
+[Get started with ButterBlogs](https://butterblogs.com)
+
+---
 
 ## License
 
